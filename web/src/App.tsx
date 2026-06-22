@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./App.css";
+import { isSunUp } from "./sun";
 
 /**
  * PATH commute board — portrait kiosk.
@@ -21,6 +22,20 @@ import "./App.css";
 const API_URL = "/bin/portauthority/ridepath.json";
 const REFRESH_MS = 30000;
 const DEFAULT_HOME = "WTC";
+
+type ThemeMode = "auto" | "light" | "dark";
+
+function loadThemeMode(): ThemeMode {
+  const v = localStorage.getItem("themeMode");
+  return (v === "light" || v === "dark" || v === "auto") ? v : "auto";
+}
+
+function resolveTheme(mode: ThemeMode, coords: GeolocationCoordinates | null): "light" | "dark" {
+  if (mode === "light") return "light";
+  if (mode === "dark") return "dark";
+  if (coords) return isSunUp(coords.latitude, coords.longitude) ? "light" : "dark";
+  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
 
 // Line colours (feed hex, no #).
 const RED = "D93A30";    // NWK–WTC
@@ -147,6 +162,8 @@ function Train({ m, isNext, anchorMs, nowMs }: { m: Message; isNext: boolean; an
 }
 
 export default function PathBoard() {
+  const [themeMode, setThemeMode] = useState<ThemeMode>(loadThemeMode);
+  const [coords, setCoords] = useState<GeolocationCoordinates | null>(null);
   const [home, setHome] = useState(DEFAULT_HOME);
   const [station, setStation] = useState(DEFAULT_HOME);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -156,6 +173,35 @@ export default function PathBoard() {
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [now, setNow] = useState(new Date());
   const closeRef = useRef<HTMLButtonElement | null>(null);
+
+  // Geolocation — request once, cache in state. Used by auto theme.
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setCoords(pos.coords),
+      () => setCoords(null),
+    );
+  }, []);
+
+  // Apply theme to <html> and re-evaluate every minute for auto mode.
+  useEffect(() => {
+    const apply = () => {
+      document.documentElement.dataset.theme = resolveTheme(themeMode, coords);
+    };
+    apply();
+    const t = setInterval(apply, 60_000);
+    return () => clearInterval(t);
+  }, [themeMode, coords]);
+
+  const cycleTheme = () => {
+    setThemeMode((prev) => {
+      const next: ThemeMode = prev === "auto" ? "light" : prev === "light" ? "dark" : "auto";
+      localStorage.setItem("themeMode", next);
+      return next;
+    });
+  };
+
+  const themeLabel = themeMode === "auto" ? "Auto" : themeMode === "light" ? "Light" : "Dark";
+  const themeIcon = themeMode === "auto" ? "🌓" : themeMode === "light" ? "☀️" : "🌙";
 
   const load = useCallback(async () => {
     try {
@@ -259,7 +305,12 @@ export default function PathBoard() {
           Updated {updStr}
           {!live && <span className="warn"> · live feed unavailable, showing sample</span>}
         </span>
-        <button className="pb-refresh" onClick={load}>Refresh</button>
+        <div className="pb-foot-right">
+          <button className="pb-theme-btn" onClick={cycleTheme} title={`Theme: ${themeLabel} — click to cycle`}>
+            {themeIcon} {themeLabel}
+          </button>
+          <button className="pb-refresh" onClick={load}>Refresh</button>
+        </div>
       </footer>
 
       {/* Picker */}
