@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+web/dist/
+infra/dist/
+infra/cdk.out/
+
+# TypeScript
+*.js.map
+*.d.ts
+
+# CDK context (auto-generated; commit only if you pin context deliberately)
+cdk.context.json
+
+# Vite
+web/.vite/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
