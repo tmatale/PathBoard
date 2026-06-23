@@ -203,7 +203,14 @@ export default function PathBoard() {
   const themeLabel = themeMode === "auto" ? "Auto" : themeMode === "light" ? "Light" : "Dark";
   const themeIcon = themeMode === "auto" ? "🌓" : themeMode === "light" ? "☀️" : "🌙";
 
+  const devMode = new URLSearchParams(window.location.search).get("dev") === "true";
+
   const load = useCallback(async () => {
+    if (devMode) {
+      setData(SAMPLE); setLive(false);
+      setUpdatedAt(new Date()); setFetchedAt(Date.now());
+      return;
+    }
     try {
       const res = await fetch(API_URL, { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -212,14 +219,14 @@ export default function PathBoard() {
       setData(json); setLive(true);
       setUpdatedAt(new Date()); setFetchedAt(Date.now());
     } catch (e) {
-      // Keep the last good data AND its anchor on a transient failure; only
-      // anchor "now" if we're falling back to the sample on first load.
-      setData((prev) => prev || SAMPLE);
+      if (devMode) {
+        setData(SAMPLE);
+      }
       setLive(false);
       setUpdatedAt((prev) => prev || new Date());
       setFetchedAt((prev) => prev ?? Date.now());
     }
-  }, []);
+  }, [devMode]);
 
   useEffect(() => {
     load();
@@ -276,8 +283,12 @@ export default function PathBoard() {
       </div>
 
       <main className="pb-body">
-        {DIR.map((d) => {
+        {!data && !devMode && (
+          <p className="pb-empty pb-unavailable">Live data unavailable — please try again shortly.</p>
+        )}
+        {(data || devMode) && DIR.map((d) => {
           const msgs = messagesFor(destinations, d.key);
+          if (msgs.length === 0) return null;
           return (
             <section key={d.key}>
               <div className="pb-dir-head">
@@ -285,16 +296,12 @@ export default function PathBoard() {
                 <span className="lbl">{d.label}</span>
                 <span className="rule" />
               </div>
-              {msgs.length === 0 ? (
-                <p className="pb-empty">No scheduled departures in this direction.</p>
-              ) : (
-                <div className="pb-trains">
-                  {msgs.map((m, i) => (
-                    <Train key={m.target + i} m={m} isNext={i === 0}
-                      anchorMs={fetchedAt} nowMs={now.getTime()} />
-                  ))}
-                </div>
-              )}
+              <div className="pb-trains">
+                {msgs.map((m, i) => (
+                  <Train key={m.target + i} m={m} isNext={i === 0}
+                    anchorMs={fetchedAt} nowMs={now.getTime()} />
+                ))}
+              </div>
             </section>
           );
         })}
