@@ -78,15 +78,17 @@ const SAMPLE = {"results":[{"consideredStation":"NWK","destinations":[{"label":"
 // own between the 30s polls instead of being frozen at load. Each poll
 // re-anchors, so this stays honest. Falls back to the feed's preformatted
 // arrivalTimeMessage if we have no anchor or seconds.
-type Message = { target: string; secondsToArrival: string; arrivalTimeMessage: string; lineColor: string; headSign: string; };
+type Message = { target: string; secondsToArrival: string; arrivalTimeMessage: string; lineColor: string; headSign: string; lastUpdated?: string; };
 type Destination = { label: string; messages: Message[]; };
 type StationResult = { consideredStation: string; destinations: Destination[]; };
 type FeedData = { results: StationResult[]; };
 
 function arrivalParts(m: Message, anchorMs: number | null, nowMs: number) {
   const secs = Number(m.secondsToArrival);
-  if (anchorMs && Number.isFinite(secs)) {
-    const remainingSec = (anchorMs + secs * 1000 - nowMs) / 1000;
+  const msgAnchor = m.lastUpdated ? Date.parse(m.lastUpdated) : NaN;
+  const anchor = Number.isFinite(msgAnchor) ? msgAnchor : anchorMs;
+  if (anchor && Number.isFinite(secs)) {
+    const remainingSec = (anchor + secs * 1000 - nowMs) / 1000;
     const mins = Math.max(0, Math.round(remainingSec / 60));
     if (mins === 0) return { mins: "Now", unit: "", now: true };
     return { mins: String(mins), unit: "min", now: false };
