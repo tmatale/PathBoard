@@ -30,6 +30,11 @@ function loadThemeMode(): ThemeMode {
   return (v === "light" || v === "dark" || v === "auto") ? v : "auto";
 }
 
+function loadHome(): string {
+  const v = localStorage.getItem("home");
+  return v && STATIONS.some((s) => s.code === v) ? v : DEFAULT_HOME;
+}
+
 function resolveTheme(mode: ThemeMode, coords: GeolocationCoordinates | null): "light" | "dark" {
   if (mode === "light") return "light";
   if (mode === "dark") return "dark";
@@ -166,8 +171,12 @@ function Train({ m, isNext, anchorMs, nowMs }: { m: Message; isNext: boolean; an
 export default function PathBoard() {
   const [themeMode, setThemeMode] = useState<ThemeMode>(loadThemeMode);
   const [coords, setCoords] = useState<GeolocationCoordinates | null>(null);
-  const [home, setHome] = useState(DEFAULT_HOME);
-  const [station, setStation] = useState(DEFAULT_HOME);
+  const [home, setHomeState] = useState(loadHome);
+  const [station, setStation] = useState(home);
+  const setHome = (code: string) => {
+    localStorage.setItem("home", code);
+    setHomeState(code);
+  };
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [data, setData] = useState<FeedData | null>(null);
   const [live, setLive] = useState(true);
