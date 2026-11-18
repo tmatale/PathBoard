@@ -154,3 +154,27 @@ html[data-theme="light"],html[data-theme="light"] body{background:#faf7f2;}
   .pb-live i{animation:none;}
   .pb-scrim,.pb-drawer{transition:none;}
 }
+
+/* Landscape — tighten chrome and scale train rows via vh so everything fits */
+@media (orientation:landscape){
+  .pb-root{
+    padding-top:max(1vh, env(safe-area-inset-top));
+    padding-bottom:max(1vh, env(safe-area-inset-bottom));
+  }
+  .pb-titlebar{ margin-top:0.6vh; padding-bottom:0.6vh; }
+  .pb-foot{ padding-top:0.6vh; margin-top:0; }
+  .pb-body{ overflow:hidden; gap:clamp(6px,1.2vh,22px); padding-top:0.6vh; }
+  .pb-dir-head{ margin-bottom:clamp(4px,0.8vh,8px); }
+  .pb-trains{ gap:clamp(4px,0.8vh,8px); }
+
+  /* Rows use portrait size as max; shrink via vh only when screen is too short */
+  .pb-train{ padding:clamp(8px,2vh,14px) 16px; }
+  .pb-train.next{ padding:clamp(10px,2.4vh,18px) 16px; }
+  .pb-rail{ min-height:clamp(20px,4vh,34px); }
+  .pb-sign{ font-size:clamp(12px,2.8vh,22px); }
+  .pb-train.next .pb-sign{ font-size:clamp(14px,3.2vh,26px); }
+  .pb-route{ font-size:clamp(8px,1.3vh,11px); }
+  .pb-mins{ font-size:clamp(22px,7.5vh,50px); }
+  .pb-train.next .pb-mins{ font-size:clamp(28px,9vh,64px); }
+  .pb-unit{ font-size:clamp(10px,1.5vh,15px); }
+}
